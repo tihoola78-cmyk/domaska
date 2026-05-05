@@ -1,12 +1,14 @@
 def is_year_leap(year):
     """Функция проверяет, является ли год високосным"""
-    return year % 4 == 0
+    if year % 400 == 0:
+        return True
+    if year % 100 == 0:
+        return False
+    if year % 4 == 0:
+        return True
+    return False
 
-# Выберите любой год для проверки
-year = 2023
 
-# Вызываем функцию и сохраняем результат
+year = 2024
 result = is_year_leap(year)
-
-# Выводим результат
 print(f"год {year}: {result}")
