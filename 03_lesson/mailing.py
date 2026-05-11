@@ -1,4 +1,4 @@
-from address import Address
+from Address import Address
 
 
 class Mailing:
