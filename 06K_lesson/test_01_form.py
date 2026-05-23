@@ -15,7 +15,7 @@ def driver():
     driver.quit()
 
 
-def test_form_submission(driver):
+def test_form_validation(driver):
     driver.get(
         "https://bonigarcia.dev/selenium-webdriver-java/data-types.html"
     )
@@ -38,23 +38,24 @@ def test_form_submission(driver):
         By.CSS_SELECTOR, "button[type='submit']"
     ).click()
 
-    # Ждём загрузки страницы результатов
+    # Ждём появления результатов валидации
     WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located(
-            (By.XPATH, "//h1[text()='Data types']")
-        )
+        EC.presence_of_element_located((By.CLASS_NAME, "alert-danger"))
     )
 
-    # Проверяем, что Zip code пуст (N/A)
-    page_text = driver.find_element(By.TAG_NAME, "body").text
-    assert "N/A" in page_text, "Zip code не пустой"
+    # Проверка: поле Zip code должно быть красным (alert-danger)
+    zip_code_alert = driver.find_element(By.ID, "zip-code")
+    zip_classes = zip_code_alert.get_attribute("class")
+    assert "alert-danger" in zip_classes, "Zip code не подсвечен красным"
 
-    # Проверяем остальные поля
-    assert "Иван" in page_text
-    assert "Петров" in page_text
-    assert "test@skypro.com" in page_text
-    assert "Ленина, 55-3" in page_text
-    assert "Москва" in page_text
-    assert "Россия" in page_text
-    assert "QA" in page_text
-    assert "SkyPro" in page_text
+    # Проверка остальных полей (должны быть зелёными - alert-success)
+    green_fields = [
+        "first-name", "last-name", "address", "e-mail",
+        "phone", "city", "country", "job-position", "company"
+    ]
+
+    for field_id in green_fields:
+        field_alert = driver.find_element(By.ID, field_id)
+        field_classes = field_alert.get_attribute("class")
+        assert "alert-success" in field_classes, \
+            f"Поле {field_id} не подсвечено зелёным"
