@@ -3,7 +3,6 @@ from .base_page import BasePage
 
 
 class LoginPage(BasePage):
-    # Locators
     USERNAME_INPUT = (By.ID, "user-name")
     PASSWORD_INPUT = (By.ID, "password")
     LOGIN_BUTTON = (By.ID, "login-button")
@@ -21,12 +20,20 @@ class LoginPage(BasePage):
 class InventoryPage(BasePage):
     BURGER_MENU = (By.ID, "react-burger-menu-btn")
     LOGOUT_LINK = (By.ID, "logout_sidebar_link")
+    CART_LINK = (By.CLASS_NAME, "shopping_cart_link")
+
+    def add_item_to_cart(self, item_name):
+        item = self.find_element(
+            (By.XPATH, f"//div[text()='{item_name}']")
+        )
+        add_button = item.find_element(
+            By.XPATH,
+            "./ancestor::div[@class='inventory_item']//button"
+        )
+        add_button.click()
+
+    def go_to_cart(self):
+        self.click(self.CART_LINK)
 
     def is_logged_in(self):
         return self.find_element(self.BURGER_MENU).is_displayed()
-
-    def logout(self):
-        self.click(self.BURGER_MENU)
-        # Ожидаем, пока кнопка Logout станет видимой и кликабельной
-        self.wait.until(lambda d: d.find_element(*self.LOGOUT_LINK).is_displayed())
-        self.click(self.LOGOUT_LINK)
