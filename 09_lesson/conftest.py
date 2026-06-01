@@ -1,18 +1,18 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from models import Base
+
 
 @pytest.fixture(scope="session")
 def engine():
-    # Используем SQLite в памяти (быстро и не требует установки)
     engine = create_engine('sqlite:///:memory:')
     yield engine
     engine.dispose()
 
+
 @pytest.fixture
 def session(engine):
-    from .models import Base
-    # Создаём все таблицы перед тестом
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()

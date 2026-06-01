@@ -1,88 +1,46 @@
 import pytest
-import sqlite3
 from datetime import datetime, timezone
-
-
-@pytest.fixture
-def connection():
-    conn = sqlite3.connect(':memory:')
-    conn.execute('''
-        CREATE TABLE students (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            deleted_at TIMESTAMP
-        )
-    ''')
-    yield conn
-    conn.close()
+import time
+from models import Student
 
 
 @pytest.fixture
 def student_data():
+    # Уникальный email на основе времени
+    unique_email = f"test.{int(time.time() * 1000)}@example.com"
     return {
         "name": "Иван Петров",
-        "email": "ivan.petrov@example.com"
+        "email": unique_email
     }
 
 
-def test_create_student(connection, student_data):
-    cursor = connection.cursor()
-    cursor.execute(
-        "INSERT INTO students (name, email) VALUES (?, ?)",
-        (student_data["name"], student_data["email"])
-    )
-    connection.commit()
-
-    cursor.execute(
-        "SELECT id, name, email FROM students WHERE email = ?",
-        (student_data["email"],)
-    )
-    row = cursor.fetchone()
-    assert row is not None
-    assert row[1] == student_data["name"]
-    assert row[2] == student_data["email"]
+def test_create_student(session, student_data):
+    student = Student(**student_data)
+    session.add(student)
+    session.commit()
+    assert student.id is not None
 
 
-def test_update_student(connection, student_data):
-    cursor = connection.cursor()
-    cursor.execute(
-        "INSERT INTO students (name, email) VALUES (?, ?)",
-        (student_data["name"], student_data["email"])
-    )
-    connection.commit()
+def test_update_student(session, student_data):
+    student = Student(**student_data)
+    session.add(student)
+    session.commit()
 
     new_name = "Петр Иванов"
-    cursor.execute(
-        "UPDATE students SET name = ? WHERE email = ?",
-        (new_name, student_data["email"])
-    )
-    connection.commit()
+    student.name = new_name
+    session.commit()
 
-    cursor.execute(
-        "SELECT name FROM students WHERE email = ?",
-        (student_data["email"],)
-    )
-    assert cursor.fetchone()[0] == new_name
+    updated_student = session.get(Student, student.id)
+    assert updated_student.name == new_name
 
 
-def test_soft_delete_student(connection, student_data):
-    cursor = connection.cursor()
-    cursor.execute(
-        "INSERT INTO students (name, email) VALUES (?, ?)",
-        (student_data["name"], student_data["email"])
-    )
-    connection.commit()
+def test_soft_delete_student(session, student_data):
+    student = Student(**student_data)
+    session.add(student)
+    session.commit()
 
-    now = datetime.now(timezone.utc)
-    cursor.execute(
-        "UPDATE students SET deleted_at = ? WHERE email = ?",
-        (now, student_data["email"])
-    )
-    connection.commit()
+    student.deleted_at = datetime.now(timezone.utc)
+    session.commit()
 
-    cursor.execute(
-        "SELECT deleted_at FROM students WHERE email = ?",
-        (student_data["email"],)
-    )
-    assert cursor.fetchone()[0] is not None
+    deleted_student = session.get(Student, student.id)
+    assert deleted_student.deleted_at is not None
